@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>requestIdleCallback</title>
+</head>
+<body>
+    <div>
+        <h3>页面流畅与 FPS</h3>
+        <p>页面是一帧一帧绘制出来的，当每秒绘制的帧数（FPS）达到 60 时，页面是流畅的，小于这个值时，用户会感觉到卡顿。</p>
+        <p>1s 60帧，所以每一帧分到的时间是 1000/60 ≈ 16 ms。所以我们书写代码时力求不让一帧的工作量超过 16ms。</p>
+        <h3>那么浏览器每一帧内需要完成如下六个步骤的任务：</h3>
+        <ul>
+            <li>处理用户的交互</li>
+            <li>JS 解析执行</li>
+            <li>帧开始。窗口尺寸变更，页面滚去等的处理</li>
+            <li>requestAnimationFrame(rAF)</li>
+            <li>布局</li>
+            <li>绘制</li>
+        </ul>
+        <p>上面六个步骤完成后没超过 16 ms，说明时间有富余，此时就会执行 requestIdleCallback 里注册的任务。</p>
+        <h3>requestAnimationFrame：每一帧必定会执行不同</h3>
+        <h3>requestIdleCallback：是捡浏览器空闲来执行任务。</h3>
+        <div style="width:200px;border:1px solid red;background-color:rgba(0,0,0,0.3);">
+            <div id="t1"></div>
+            <div id="t2"></div>
+        </div>
+    </div>
+    <script>
+        /**
+         * requestAnimationFrame
+         * 每帧都会执行
+         */
+        let n = 0;
+        let raf = null;
+        // 开始任务
+        const run = () => {
+            document.getElementById('t2').innerHTML = n++;
+            raf = requestAnimationFrame(run);
+        };
+        run();
+        setTimeout(() => {
+            // 停止任务
+            cancelAnimationFrame(raf);
+        }, 1000);
+        
+
+        /**
+         * requestIdleCallback (callback, options)
+         * 每帧空闲时间执行
+         * callback：回调方法
+         *      deadline：参数
+         *          timeRemaining：【Number】剩余时间
+         *          didTimeout：【Boolean】是否超时
+         * options：参数
+         *      timeout：最迟执行时间
+         */
+        requestIdleCallback(myNonEssentialWork, { timeout: 2000 });
+        // 任务队列
+        const tasks = [
+            () => "tasks 1 run",
+            () => "tasks 2 run",
+            () => "tasks 3 run",
+            () => "tasks 4 run",
+            () => "tasks 5 run",
+        ];
+        function myNonEssentialWork (deadline) {
+            // 如果帧内有富余的时间，或者超时
+            while ((deadline.timeRemaining() > 0 || deadline.didTimeout) && tasks.length > 0) {
+                work();
+            }
+            tasks.length > 0 && requestIdleCallback(myNonEssentialWork);
+        }
+        function work () {
+            document.getElementById('t1').innerHTML += tasks.shift()() + '<br/>';
+        }
+    </script>
+</body>
+</html>
