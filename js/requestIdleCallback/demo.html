@@ -33,17 +33,21 @@
          * 每帧都会执行
          */
         let n = 0;
+        let num = 0;
         let raf = null;
         // 开始任务
         const run = () => {
-            document.getElementById('t2').innerHTML = n++;
+            if (n++ === 60) {
+                n = 0;
+                document.getElementById('t2').innerHTML = ++num;
+            } 
             raf = requestAnimationFrame(run);
         };
         run();
         setTimeout(() => {
             // 停止任务
             cancelAnimationFrame(raf);
-        }, 1000);
+        }, 10000);
         
 
         /**
